@@ -3,22 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contact Assignment - Location Management</title>
+    <title>Location ID Validation - Contact Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom scrollbar for a cleaner look */
-        #resultsList::-webkit-scrollbar { width: 6px; }
-        #resultsList::-webkit-scrollbar-track { background: #f1f1f1; }
-        #resultsList::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        #resultsList::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
         .loader { border-top-color: #3b82f6; animation: spinner 0.8s linear infinite; }
         @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Notification Modal styling */
+        /* Validation status styles */
+        .status-valid { color: #16a34a; background-color: #f0fdf4; border-color: #bbf7d0; }
+        .status-invalid { color: #dc2626; background-color: #fef2f2; border-color: #fecaca; }
+        
         #customAlert { display: none; }
     </style>
 </head>
@@ -30,41 +27,31 @@
         <div class="bg-slate-900 px-6 py-8 md:px-10">
             <h2 class="text-2xl font-extrabold text-white tracking-tight flex items-center gap-3">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
-                Location Management
+                Location ID Management
             </h2>
-            <p class="text-slate-400 text-sm mt-2 font-medium">Link new contacts to your registered accounts and locations.</p>
+            <p class="text-slate-400 text-sm mt-2 font-medium">Validate your Location ID to assign new contacts.</p>
         </div>
         
         <!-- Main Form -->
         <form id="mainForm" class="p-6 md:p-10 space-y-8">
             
-            <!-- Account Search Section -->
+            <!-- Location ID Validation Section -->
             <div class="relative">
-                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3">Target Account / Location</label>
-                <div class="relative group">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg class="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3">Location ID</label>
+                <div class="flex gap-3">
+                    <div class="relative flex-grow">
+                        <input type="text" id="locationIdInput" placeholder="Enter Location ID..." autocomplete="off"
+                               class="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl px-4 py-3.5 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400">
                     </div>
-                    <input type="text" id="searchAccount" placeholder="Search by name..." autocomplete="off"
-                           class="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl pl-10 pr-4 py-3.5 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400">
-                    
-                    <!-- Dropdown Results -->
-                    <div id="resultsList" class="absolute z-50 w-full bg-white border border-slate-200 rounded-xl mt-2 max-h-72 overflow-y-auto hidden shadow-2xl divide-y divide-slate-50">
-                        <!-- Items injected here -->
-                    </div>
+                    <button type="button" id="validateBtn" class="bg-slate-800 text-white px-6 py-3.5 rounded-xl font-bold hover:bg-slate-700 transition-all flex items-center gap-2">
+                        <span id="validateText">Validate</span>
+                        <div id="validateSpinner" class="hidden loader border-2 border-t-2 border-slate-400 h-4 w-4"></div>
+                    </button>
                 </div>
                 
-                <!-- Data Holders -->
-                <input type="hidden" id="selectedAccountName">
-                <input type="hidden" id="selectedLocationId">
-                <input type="hidden" id="selectedCompanyId">
-                
-                <div id="selectedFeedback" class="mt-3 text-sm flex items-center gap-2 min-h-[1.5rem]"></div>
+                <div id="validationFeedback" class="mt-3 text-sm flex items-center gap-2 min-h-[1.5rem] hidden p-3 rounded-lg border"></div>
             </div>
 
             <div class="h-px bg-slate-100"></div>
@@ -72,75 +59,72 @@
             <!-- Contacts Section -->
             <div>
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest">Team Members / Contacts</label>
-                    <button type="button" id="addPerson" class="w-full sm:w-auto text-xs bg-blue-600 text-white hover:bg-blue-700 font-bold py-2.5 px-5 rounded-lg transition-all flex items-center justify-center gap-2 shadow-sm shadow-blue-200 active:scale-95">
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest">Contacts to send</label>
+                    <button type="button" id="addPerson" class="w-full sm:w-auto text-xs bg-blue-600 text-white hover:bg-blue-700 font-bold py-2.5 px-5 rounded-lg transition-all flex items-center justify-center gap-2 shadow-sm shadow-blue-200">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                           <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                         </svg>
-                        <span>ADD CONTACT</span>
+                        <span>ADD PERSON</span>
                     </button>
                 </div>
 
                 <div id="peopleContainer" class="space-y-4">
-                    <!-- Default Initial Entry -->
-                    <div class="person-entry grid grid-cols-1 md:grid-cols-3 gap-4 p-5 bg-slate-50 rounded-xl border border-slate-200 relative group hover:border-blue-400 transition-colors">
+                    <!-- Default Row -->
+                    <div class="person-entry grid grid-cols-1 md:grid-cols-3 gap-4 p-5 bg-slate-50 rounded-xl border border-slate-200 relative group animate-fade-in hover:border-blue-400 transition-colors">
                         <div class="space-y-1.5">
                             <label class="text-[10px] font-bold text-slate-400 uppercase">First Name</label>
-                            <input type="text" name="first_name" required placeholder="Jane" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                            <input type="text" name="first_name" required class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
                         </div>
                         <div class="space-y-1.5">
                             <label class="text-[10px] font-bold text-slate-400 uppercase">Last Name</label>
-                            <input type="text" name="last_name" required placeholder="Doe" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                            <input type="text" name="last_name" required class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
                         </div>
                         <div class="space-y-1.5">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase">Email Address</label>
-                            <input type="email" name="email" required placeholder="jane@company.com" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">Email</label>
+                            <input type="email" name="email" required class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Submit Action -->
+            <!-- Submit Button -->
             <div class="pt-6">
-                <button type="submit" id="submitBtn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4.5 py-4 rounded-xl shadow-lg shadow-slate-200 transform transition active:scale-[0.98] flex justify-center items-center gap-3">
-                    <span id="btnText">SAVE ALL CONTACTS</span>
+                <button type="submit" id="submitBtn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg shadow-slate-200 transform transition active:scale-[0.98] flex justify-center items-center gap-3">
+                    <span id="btnText">SEND INFORMATION</span>
                     <div id="spinner" class="hidden loader ease-linear rounded-full border-2 border-t-2 border-slate-500 h-5 w-5"></div>
                 </button>
-                <div id="statusMsg" class="mt-6 p-4 rounded-lg text-center text-sm font-semibold hidden"></div>
             </div>
         </form>
     </div>
 
-    <!-- UI Components for Alerts -->
+    <!-- Custom Alert Modal -->
     <div id="customAlert" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl text-center">
             <div id="alertIcon" class="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4"></div>
             <h3 id="alertTitle" class="text-xl font-bold text-slate-900 mb-2"></h3>
             <p id="alertBody" class="text-slate-500 text-sm mb-6"></p>
-            <button onclick="closeAlert()" class="w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition-colors">Dismiss</button>
+            <button onclick="closeAlert()" class="w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition-colors">Close</button>
         </div>
     </div>
 
     <script>
-        const GET_DATA_URL = 'https://hook.us2.make.com/3dsfptf2s4bseiwaozr3bumfk5guw58z';
-        const POST_DATA_URL = 'https://hook.us2.make.com/6czd9m1i7uqqnbnizn8lkokrlcgrs9zl';
+        const VALIDATE_URL = 'https://hook.us2.make.com/3dsfptf2s4bseiwaozr3bumfk5guw58z';
+        const SUBMIT_URL = 'https://hook.us2.make.com/6czd9m1i7uqqnbnizn8lkokrlcgrs9zl';
 
-        let locationsDB = [];
+        let isValidated = false;
         
         const els = {
-            search: document.getElementById('searchAccount'),
-            results: document.getElementById('resultsList'),
-            feedback: document.getElementById('selectedFeedback'),
+            idInput: document.getElementById('locationIdInput'),
+            validateBtn: document.getElementById('validateBtn'),
+            validateText: document.getElementById('validateText'),
+            validateSpinner: document.getElementById('validateSpinner'),
+            feedback: document.getElementById('validationFeedback'),
             peopleBox: document.getElementById('peopleContainer'),
             addBtn: document.getElementById('addPerson'),
             form: document.getElementById('mainForm'),
             submitBtn: document.getElementById('submitBtn'),
             btnText: document.getElementById('btnText'),
             spinner: document.getElementById('spinner'),
-            status: document.getElementById('statusMsg'),
-            hName: document.getElementById('selectedAccountName'),
-            hLocId: document.getElementById('selectedLocationId'),
-            hCompId: document.getElementById('selectedCompanyId'),
             // Alert elements
             alertModal: document.getElementById('customAlert'),
             alertTitle: document.getElementById('alertTitle'),
@@ -148,92 +132,67 @@
             alertIcon: document.getElementById('alertIcon')
         };
 
-        // Initialize & Fetch
-        async function init() {
-            try {
-                els.search.placeholder = "Loading locations...";
-                const res = await fetch(GET_DATA_URL);
-                const data = await res.json();
-                
-                if (data.locations) {
-                    locationsDB = data.locations;
-                    els.search.placeholder = "Search by name...";
-                }
-            } catch (err) {
-                console.error(err);
-                showAlert('error', 'Sync Failed', 'Could not load accounts. Please check your connection and refresh.');
-                els.search.placeholder = "Data currently unavailable.";
-            }
-        }
-
-        // Search Autocomplete
-        els.search.addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase().trim();
-            els.results.innerHTML = '';
-            
-            if (term.length < 1) {
-                els.results.classList.add('hidden');
+        // ID Validation Logic
+        els.validateBtn.addEventListener('click', async () => {
+            const idValue = els.idInput.value.trim();
+            if (!idValue) {
+                showAlert('warning', 'Empty Field', 'Please enter a Location ID to validate.');
                 return;
             }
 
-            const matches = locationsDB.filter(loc => 
-                loc.name.toLowerCase().includes(term) || 
-                (loc.id && loc.id.toLowerCase().includes(term))
-            ).slice(0, 10); // Limit results for performance
+            // Loading state
+            els.validateBtn.disabled = true;
+            els.validateText.textContent = "Validating...";
+            els.validateSpinner.classList.remove('hidden');
+            els.feedback.classList.add('hidden');
+            isValidated = false;
 
-            if (matches.length > 0) {
-                els.results.classList.remove('hidden');
-                matches.forEach(loc => {
-                    const div = document.createElement('div');
-                    div.className = "px-5 py-4 hover:bg-blue-50 cursor-pointer transition-colors group flex justify-between items-center";
-                    div.innerHTML = `
-                        <div>
-                            <div class="font-bold text-slate-800 text-sm group-hover:text-blue-700">${loc.name}</div>
-                            <div class="text-[10px] text-slate-400 mt-0.5">LOCATION ID: ${loc.id}</div>
-                        </div>
-                        <svg class="h-4 w-4 text-slate-300 group-hover:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                        </svg>
-                    `;
-                    
-                    div.onclick = () => {
-                        els.search.value = loc.name;
-                        els.hName.value = loc.name;
-                        els.hLocId.value = loc.id;
-                        els.hCompId.value = loc.companyId;
-                        
-                        els.feedback.innerHTML = `
-                            <div class="bg-green-50 text-green-700 px-3 py-1.5 rounded-lg border border-green-100 flex items-center gap-2 font-semibold">
-                                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                                Account Selected: ${loc.name}
-                            </div>`;
-                        els.results.classList.add('hidden');
-                    };
-                    els.results.appendChild(div);
-                });
-            } else {
-                els.results.classList.add('hidden');
+            try {
+                // Sending ID to validation webhook
+                const res = await fetch(`${VALIDATE_URL}?locationId=${idValue}`);
+                
+                if (res.status === 200) {
+                    showValidationResult(true, "✓ Valid Location ID");
+                    isValidated = true;
+                } else {
+                    const errorData = await res.json().catch(() => ({}));
+                    const errorMsg = errorData.error || "Not a valid Location ID";
+                    showValidationResult(false, `❌ ${errorMsg}`);
+                }
+            } catch (err) {
+                console.error(err);
+                showValidationResult(false, "❌ Connection error during validation");
+            } finally {
+                els.validateBtn.disabled = false;
+                els.validateText.textContent = "Validate";
+                els.validateSpinner.classList.add('hidden');
             }
         });
 
-        // Add Contact Row
+        function showValidationResult(success, message) {
+            els.feedback.textContent = message;
+            els.feedback.classList.remove('hidden');
+            els.feedback.className = `mt-3 text-sm flex items-center gap-2 min-h-[1.5rem] p-3 rounded-lg border ${success ? 'status-valid' : 'status-invalid'}`;
+        }
+
+        // Add Person Row
         els.addBtn.addEventListener('click', () => {
             const row = document.createElement('div');
             row.className = "person-entry grid grid-cols-1 md:grid-cols-3 gap-4 p-5 bg-slate-50 rounded-xl border border-slate-200 relative group animate-fade-in hover:border-blue-400 transition-colors";
             row.innerHTML = `
                 <div class="space-y-1.5">
                     <label class="text-[10px] font-bold text-slate-400 uppercase">First Name</label>
-                    <input type="text" name="first_name" required placeholder="Jane" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                    <input type="text" name="first_name" required class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
                 </div>
                 <div class="space-y-1.5">
                     <label class="text-[10px] font-bold text-slate-400 uppercase">Last Name</label>
-                    <input type="text" name="last_name" required placeholder="Doe" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                    <input type="text" name="last_name" required class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
                 </div>
                 <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-slate-400 uppercase">Email Address</label>
-                    <input type="email" name="email" required placeholder="jane@company.com" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase">Email</label>
+                    <input type="email" name="email" required class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
                 </div>
-                <button type="button" class="remove-person absolute -right-3 -top-3 bg-white text-slate-400 border border-slate-200 rounded-full w-8 h-8 flex items-center justify-center shadow-lg sm:opacity-0 group-hover:opacity-100 transition-all hover:text-red-500 hover:border-red-100 hover:bg-red-50">
+                <button type="button" class="remove-person absolute -right-3 -top-3 bg-white text-slate-400 border border-slate-200 rounded-full w-8 h-8 flex items-center justify-center shadow-lg transition-all hover:text-red-500 hover:border-red-100 hover:bg-red-50">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             `;
@@ -241,20 +200,19 @@
             row.querySelector('.remove-person').onclick = () => row.remove();
         });
 
-        // Submit Form
+        // Final Submit
         els.form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            if (!els.hLocId.value) {
-                showAlert('warning', 'Missing Selection', 'Please select a valid account from the search dropdown.');
+            if (!isValidated) {
+                showAlert('warning', 'Pending Validation', 'You must successfully validate the Location ID before submitting.');
                 return;
             }
 
-            // UI State
+            // UI Loading
             els.submitBtn.disabled = true;
-            els.btnText.textContent = "PROCESSING...";
+            els.btnText.textContent = "SENDING...";
             els.spinner.classList.remove('hidden');
-            els.status.classList.add('hidden');
 
             const personRows = document.querySelectorAll('.person-entry');
             const contactsArray = Array.from(personRows).map(row => ({
@@ -264,43 +222,41 @@
             }));
 
             const payload = {
-                location_id: els.hLocId.value,
-                company_id: els.hCompId.value,
-                account_name: els.hName.value,
+                location_id: els.idInput.value.trim(),
                 contacts: contactsArray,
                 timestamp: new Date().toISOString()
             };
 
             try {
-                const response = await fetch(POST_DATA_URL, {
+                const response = await fetch(SUBMIT_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
 
                 if (response.ok) {
-                    showAlert('success', 'Success!', 'Information has been saved and mapped to the account.');
+                    showAlert('success', 'Success!', 'Contacts have been successfully registered for this location.');
                     
-                    // Reset Form
+                    // Reset form
                     els.form.reset();
-                    els.hName.value = ""; els.hLocId.value = ""; els.hCompId.value = "";
-                    els.feedback.innerHTML = "";
+                    els.feedback.classList.add('hidden');
+                    isValidated = false;
                     els.peopleBox.innerHTML = '';
-                    els.addBtn.click(); // Add back one clean row
+                    els.addBtn.click();
                 } else {
-                    throw new Error("API Failure");
+                    throw new Error("Server error");
                 }
             } catch (error) {
                 console.error(error);
-                showAlert('error', 'Submission Error', 'We couldn\'t send the data. Please try again in a few moments.');
+                showAlert('error', 'Submission Error', 'There was a problem sending the data. Please try again later.');
             } finally {
                 els.submitBtn.disabled = false;
-                els.btnText.textContent = "SAVE ALL CONTACTS";
+                els.btnText.textContent = "SEND INFORMATION";
                 els.spinner.classList.add('hidden');
             }
         });
 
-        // Custom Helper Functions
+        // UI Helpers
         function showAlert(type, title, message) {
             els.alertTitle.textContent = title;
             els.alertBody.textContent = message;
@@ -317,16 +273,18 @@
             els.alertModal.style.display = 'flex';
         }
 
-        function closeAlert() {
+        window.closeAlert = function() {
             els.alertModal.style.display = 'none';
         }
 
-        // Global listeners
-        document.addEventListener('click', (e) => {
-            if (!els.search.contains(e.target)) els.results.classList.add('hidden');
+        // If input changes after validation, force re-validation
+        els.idInput.addEventListener('input', () => {
+            if (isValidated) {
+                isValidated = false;
+                els.feedback.classList.add('hidden');
+            }
         });
 
-        init();
     </script>
 </body>
 </html>
