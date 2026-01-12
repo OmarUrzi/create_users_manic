@@ -132,13 +132,11 @@
             alertIcon: document.getElementById('alertIcon')
         };
 
-        // ID Validation Logic
-        els.validateBtn.addEventListener('click', async () => {
-            const idValue = els.idInput.value.trim();
-            if (!idValue) {
-                showAlert('warning', 'Empty Field', 'Please enter a Location ID to validate.');
-                return;
-            }
+        /**
+         * Function to perform validation
+         */
+        async function performValidation(idValue) {
+            if (!idValue) return;
 
             // Loading state
             els.validateBtn.disabled = true;
@@ -167,6 +165,27 @@
                 els.validateText.textContent = "Validate";
                 els.validateSpinner.classList.add('hidden');
             }
+        }
+
+        // Check for Query Params on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const locationIdFromUrl = urlParams.get('locationId');
+            
+            if (locationIdFromUrl) {
+                els.idInput.value = locationIdFromUrl;
+                performValidation(locationIdFromUrl);
+            }
+        });
+
+        // ID Validation Logic (Manual Trigger)
+        els.validateBtn.addEventListener('click', () => {
+            const idValue = els.idInput.value.trim();
+            if (!idValue) {
+                showAlert('warning', 'Empty Field', 'Please enter a Location ID to validate.');
+                return;
+            }
+            performValidation(idValue);
         });
 
         function showValidationResult(success, message) {
