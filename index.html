@@ -19,16 +19,16 @@
     <div class="max-w-3xl mx-auto bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
         
         <div class="bg-gray-900 px-8 py-6">
-            <h2 class="text-xl font-bold text-white tracking-wide">Gestión de Ubicaciones</h2>
-            <p class="text-gray-400 text-sm mt-1">Busque la cuenta y asigne los contactos correspondientes.</p>
+            <h2 class="text-xl font-bold text-white tracking-wide">Location Management</h2>
+            <p class="text-gray-400 text-sm mt-1">Search for an account and assign the corresponding contacts.</p>
         </div>
         
         <form id="mainForm" class="p-8 space-y-8">
             
             <div class="relative">
-                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Buscar Cuenta / Location</label>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Search Account / Location</label>
                 <div class="relative">
-                    <input type="text" id="searchAccount" placeholder="Escriba el nombre de la cuenta..." autocomplete="off"
+                    <input type="text" id="searchAccount" placeholder="Type account name..." autocomplete="off"
                            class="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                     
                     <div id="resultsList" class="absolute z-50 w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-60 overflow-y-auto hidden shadow-xl">
@@ -46,20 +46,20 @@
 
             <div>
                 <div class="flex justify-between items-end mb-4">
-                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Listado de Contactos</label>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Contact List</label>
                     <button type="button" id="addPerson" class="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 font-bold py-2 px-4 rounded transition-colors flex items-center gap-2">
-                        <span>+ AGREGAR PERSONA</span>
+                        <span>+ ADD PERSON</span>
                     </button>
                 </div>
 
                 <div id="peopleContainer" class="space-y-4">
                     <div class="person-entry grid grid-cols-1 md:grid-cols-3 gap-4 p-5 bg-gray-50 rounded-lg border border-gray-200 relative group hover:border-blue-300 transition-colors">
                         <div class="space-y-1">
-                            <label class="text-xs text-gray-400">Nombre</label>
+                            <label class="text-xs text-gray-400">First Name</label>
                             <input type="text" name="first_name" required class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
                         </div>
                         <div class="space-y-1">
-                            <label class="text-xs text-gray-400">Apellido</label>
+                            <label class="text-xs text-gray-400">Last Name</label>
                             <input type="text" name="last_name" required class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
                         </div>
                         <div class="space-y-1">
@@ -72,7 +72,7 @@
 
             <div class="pt-4">
                 <button type="submit" id="submitBtn" class="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-lg shadow-lg transform transition hover:-translate-y-0.5 flex justify-center items-center">
-                    <span>ENVIAR DATOS</span>
+                    <span>SUBMIT DATA</span>
                     <div id="spinner" class="hidden loader ease-linear rounded-full border-2 border-t-2 border-gray-400 h-5 w-5 ml-3"></div>
                 </button>
                 <div id="statusMsg" class="mt-4 text-center text-sm font-semibold hidden"></div>
@@ -81,13 +81,13 @@
     </div>
 
     <script>
-        // URLs de Webhooks
+        // Webhook URLs
         const GET_DATA_URL = 'https://hook.us2.make.com/3dsfptf2s4bseiwaozr3bumfk5guw58z';
         const POST_DATA_URL = 'https://hook.us2.make.com/6czd9m1i7uqqnbnizn8lkokrlcgrs9zl';
 
         let locationsDB = [];
         
-        // Referencias al DOM
+        // DOM References
         const els = {
             search: document.getElementById('searchAccount'),
             results: document.getElementById('resultsList'),
@@ -104,25 +104,25 @@
             hCompId: document.getElementById('selectedCompanyId')
         };
 
-        // 1. Cargar datos al iniciar
+        // 1. Load data on init
         async function init() {
             try {
                 const res = await fetch(GET_DATA_URL);
                 const data = await res.json();
-                console.log(data)
-                // Estructura según tu ejemplo: Array -> objeto -> body -> locations
+                console.log(data.locations)
+                
                 if(data.locations) {
                     locationsDB = data.locations;
                 } else {
-                    console.error("Estructura de JSON inesperada");
+                    console.error("Unexpected JSON structure");
                 }
             } catch (err) {
                 console.error(err);
-                els.search.placeholder = "Error cargando datos. Refresque la página.";
+                els.search.placeholder = "Error loading data. Please refresh.";
             }
         }
 
-        // 2. Lógica del Buscador
+        // 2. Search Logic
         els.search.addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
             els.results.innerHTML = '';
@@ -132,7 +132,7 @@
                 return;
             }
 
-            // Filtrar
+            // Filter
             const matches = locationsDB.filter(loc => loc.name.toLowerCase().includes(term));
 
             if (matches.length > 0) {
@@ -146,13 +146,12 @@
                     `;
                     
                     div.onclick = () => {
-                        // Rellenar campos visibles y ocultos
                         els.search.value = loc.name;
                         els.hName.value = loc.name;
-                        els.hLocId.value = loc.id;        // ID IMPORTANTE
-                        els.hCompId.value = loc.companyId; // COMPANY ID IMPORTANTE
+                        els.hLocId.value = loc.id;
+                        els.hCompId.value = loc.companyId;
                         
-                        els.feedback.innerHTML = `✓ Cuenta seleccionada: <span class="text-gray-900 font-bold">${loc.name}</span>`;
+                        els.feedback.innerHTML = `✓ Selected Account: <span class="text-gray-900 font-bold">${loc.name}</span>`;
                         els.results.classList.add('hidden');
                     };
                     els.results.appendChild(div);
@@ -162,22 +161,22 @@
             }
         });
 
-        // Ocultar lista al hacer click fuera
+        // Hide list on click outside
         document.addEventListener('click', (e) => {
             if (!els.search.contains(e.target)) els.results.classList.add('hidden');
         });
 
-        // 3. Agregar Persona Dinámicamente
+        // 3. Add Person Dynamically
         els.addBtn.addEventListener('click', () => {
             const row = document.createElement('div');
             row.className = "person-entry grid grid-cols-1 md:grid-cols-3 gap-4 p-5 bg-gray-50 rounded-lg border border-gray-200 relative group animate-fade-in hover:border-blue-300 transition-colors";
             row.innerHTML = `
                 <div class="space-y-1">
-                    <label class="text-xs text-gray-400">Nombre</label>
+                    <label class="text-xs text-gray-400">First Name</label>
                     <input type="text" name="first_name" required class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
                 </div>
                 <div class="space-y-1">
-                    <label class="text-xs text-gray-400">Apellido</label>
+                    <label class="text-xs text-gray-400">Last Name</label>
                     <input type="text" name="last_name" required class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
                 </div>
                 <div class="space-y-1">
@@ -193,13 +192,12 @@
             row.querySelector('.remove-person').onclick = () => row.remove();
         });
 
-        // 4. Manejo del Submit
+        // 4. Submit Handling
         els.form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            // Validación básica
             if (!els.hLocId.value) {
-                alert("⚠️ Por favor busca y selecciona una cuenta válida de la lista.");
+                alert("⚠️ Please search and select a valid account from the list.");
                 return;
             }
 
@@ -208,7 +206,6 @@
             els.spinner.classList.remove('hidden');
             els.status.classList.add('hidden');
 
-            // Construcción del objeto de personas
             const personRows = document.querySelectorAll('.person-entry');
             const contactsArray = Array.from(personRows).map(row => ({
                 first_name: row.querySelector('[name="first_name"]').value,
@@ -216,7 +213,6 @@
                 email: row.querySelector('[name="email"]').value
             }));
 
-            // Payload final
             const payload = {
                 location_id: els.hLocId.value,
                 company_id: els.hCompId.value,
@@ -232,23 +228,21 @@
                 });
 
                 if (response.ok) {
-                    els.status.textContent = "✅ Información enviada exitosamente.";
+                    els.status.textContent = "✅ Information submitted successfully.";
                     els.status.className = "mt-4 text-center text-sm font-bold text-green-600 block";
                     
-                    // Resetear formulario
                     els.form.reset();
                     els.hName.value = ""; els.hLocId.value = ""; els.hCompId.value = "";
                     els.feedback.innerHTML = "";
                     
-                    // Dejar solo 1 fila de persona
                     els.peopleBox.innerHTML = '';
-                    els.addBtn.click(); // Agrega una fila vacía
+                    els.addBtn.click();
                 } else {
-                    throw new Error("Error en respuesta del servidor");
+                    throw new Error("Server response error");
                 }
             } catch (error) {
                 console.error(error);
-                els.status.textContent = "❌ Error al enviar. Verifica tu conexión.";
+                els.status.textContent = "❌ Submission error. Please check your connection.";
                 els.status.className = "mt-4 text-center text-sm font-bold text-red-600 block";
             } finally {
                 els.submitBtn.disabled = false;
@@ -256,7 +250,6 @@
             }
         });
 
-        // Iniciar carga de datos
         init();
     </script>
 </body>
