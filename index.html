@@ -1,187 +1,263 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Flow Example</title>
+    <title>Asignación de Contactos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 1. ESTILOS (CSS) - Visuals */
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #f4f4f9;
-            display: flex;
-            justify-content: center;
-            padding-top: 50px;
-        }
-
-        .search-wrapper {
-            width: 100%;
-            max-width: 500px;
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-
-        h2 {
-            margin-top: 0;
-            color: #333;
-        }
-
-        .search-box {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        input {
-            flex-grow: 1;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-
-        button.search-btn {
-            padding: 10px 20px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        button.search-btn:hover {
-            background-color: #0056b3;
-        }
-
-        /* Estilos de los resultados (Opciones) */
-        #results-area {
-            border-top: 1px solid #eee;
-            padding-top: 10px;
-        }
-
-        .result-item {
-            padding: 15px;
-            border-bottom: 1px solid #f0f0f0;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .result-item:hover {
-            background-color: #eef7ff;
-        }
-
-        .result-item h3 {
-            margin: 0 0 5px 0;
-            font-size: 18px;
-            color: #007BFF;
-        }
-
-        .result-item p {
-            margin: 0;
-            color: #666;
-            font-size: 14px;
-        }
-
-        .no-results {
-            color: #888;
-            font-style: italic;
-            text-align: center;
-            margin-top: 20px;
-        }
+        /* Animación para el spinner de carga */
+        .loader { border-top-color: #3498db; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Pequeña animación de entrada para nuevos campos */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
     </style>
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen py-10 px-4 font-sans text-gray-800">
 
-    <div class="search-wrapper">
-        <h2>Employee Directory</h2>
+    <div class="max-w-3xl mx-auto bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
         
-        <form id="searchForm">
-            <div class="search-box">
-                <input 
-                    type="text" 
-                    id="searchInput" 
-                    placeholder="Search by name or role..." 
-                    autocomplete="off"
-                >
-                <button type="submit" class="search-btn">Search</button>
+        <div class="bg-gray-900 px-8 py-6">
+            <h2 class="text-xl font-bold text-white tracking-wide">Gestión de Ubicaciones</h2>
+            <p class="text-gray-400 text-sm mt-1">Busque la cuenta y asigne los contactos correspondientes.</p>
+        </div>
+        
+        <form id="mainForm" class="p-8 space-y-8">
+            
+            <div class="relative">
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Buscar Cuenta / Location</label>
+                <div class="relative">
+                    <input type="text" id="searchAccount" placeholder="Escriba el nombre de la cuenta..." autocomplete="off"
+                           class="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                    
+                    <div id="resultsList" class="absolute z-50 w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-60 overflow-y-auto hidden shadow-xl">
+                        </div>
+                </div>
+                
+                <input type="hidden" id="selectedAccountName">
+                <input type="hidden" id="selectedLocationId">
+                <input type="hidden" id="selectedCompanyId">
+                
+                <div id="selectedFeedback" class="mt-2 text-sm text-green-600 font-medium min-h-[1.5rem]"></div>
+            </div>
+
+            <hr class="border-gray-100">
+
+            <div>
+                <div class="flex justify-between items-end mb-4">
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Listado de Contactos</label>
+                    <button type="button" id="addPerson" class="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 font-bold py-2 px-4 rounded transition-colors flex items-center gap-2">
+                        <span>+ AGREGAR PERSONA</span>
+                    </button>
+                </div>
+
+                <div id="peopleContainer" class="space-y-4">
+                    <div class="person-entry grid grid-cols-1 md:grid-cols-3 gap-4 p-5 bg-gray-50 rounded-lg border border-gray-200 relative group hover:border-blue-300 transition-colors">
+                        <div class="space-y-1">
+                            <label class="text-xs text-gray-400">Nombre</label>
+                            <input type="text" name="first_name" required class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs text-gray-400">Apellido</label>
+                            <input type="text" name="last_name" required class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs text-gray-400">Email</label>
+                            <input type="email" name="email" required class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4">
+                <button type="submit" id="submitBtn" class="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-lg shadow-lg transform transition hover:-translate-y-0.5 flex justify-center items-center">
+                    <span>ENVIAR DATOS</span>
+                    <div id="spinner" class="hidden loader ease-linear rounded-full border-2 border-t-2 border-gray-400 h-5 w-5 ml-3"></div>
+                </button>
+                <div id="statusMsg" class="mt-4 text-center text-sm font-semibold hidden"></div>
             </div>
         </form>
-
-        <div id="results-area">
-            <p class="no-results">Results will appear here...</p>
-        </div>
     </div>
 
     <script>
-        // A. Datos simulados (Mock Data)
-        const database = [
-            { id: 1, name: "Alice Johnson", role: "Software Engineer", location: "New York" },
-            { id: 2, name: "Alan Smith", role: "Project Manager", location: "London" },
-            { id: 3, name: "Bob Brown", role: "Designer", location: "Paris" },
-            { id: 4, name: "Charlie Davis", role: "Marketing Specialist", location: "New York" },
-            { id: 5, name: "Alicia Keys", role: "Musician", location: "Los Angeles" },
-            { id: 6, name: "John Doe", role: "HR Manager", location: "Remote" }
-        ];
+        // URLs de Webhooks
+        const GET_DATA_URL = 'https://hook.us2.make.com/3dsfptf2s4bseiwaozr3bumfk5guw58z';
+        const POST_DATA_URL = 'https://hook.us2.make.com/6czd9m1i7uqqnbnizn8lkokrlcgrs9zl';
 
-        // B. Seleccionar elementos del DOM
-        const form = document.getElementById('searchForm');
-        const input = document.getElementById('searchInput');
-        const resultsArea = document.getElementById('results-area');
+        let locationsDB = [];
+        
+        // Referencias al DOM
+        const els = {
+            search: document.getElementById('searchAccount'),
+            results: document.getElementById('resultsList'),
+            feedback: document.getElementById('selectedFeedback'),
+            peopleBox: document.getElementById('peopleContainer'),
+            addBtn: document.getElementById('addPerson'),
+            form: document.getElementById('mainForm'),
+            submitBtn: document.getElementById('submitBtn'),
+            spinner: document.getElementById('spinner'),
+            status: document.getElementById('statusMsg'),
+            // Hidden Inputs
+            hName: document.getElementById('selectedAccountName'),
+            hLocId: document.getElementById('selectedLocationId'),
+            hCompId: document.getElementById('selectedCompanyId')
+        };
 
-        // C. Escuchar el evento "Submit" (Click en Search o Enter)
-        form.addEventListener('submit', function(event) {
-            event.preventDefault(); // Evita que la página se recargue
+        // 1. Cargar datos al iniciar
+        async function init() {
+            try {
+                const res = await fetch(GET_DATA_URL);
+                const data = await res.json();
+                console.log(data)
+                // Estructura según tu ejemplo: Array -> objeto -> body -> locations
+                if(data && data[0] && data[0].body && data[0].body.locations) {
+                    locationsDB = data[0].body.locations;
+                } else {
+                    console.error("Estructura de JSON inesperada");
+                }
+            } catch (err) {
+                console.error(err);
+                els.search.placeholder = "Error cargando datos. Refresque la página.";
+            }
+        }
 
-            const query = input.value.toLowerCase().trim();
+        // 2. Lógica del Buscador
+        els.search.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            els.results.innerHTML = '';
             
-            // Si el input está vacío, limpiamos
-            if (query === "") {
-                resultsArea.innerHTML = '<p class="no-results">Please enter a keyword.</p>';
+            if (term.length < 1) {
+                els.results.classList.add('hidden');
                 return;
             }
 
-            performSearch(query);
-        });
+            // Filtrar
+            const matches = locationsDB.filter(loc => loc.name.toLowerCase().includes(term));
 
-        // D. Función de búsqueda y renderizado
-        function performSearch(keyword) {
-            // 1. Filtrar los datos
-            const results = database.filter(user => 
-                user.name.toLowerCase().includes(keyword) || 
-                user.role.toLowerCase().includes(keyword)
-            );
-
-            // 2. Limpiar área de resultados previa
-            resultsArea.innerHTML = '';
-
-            // 3. Mostrar resultados u opciones
-            if (results.length === 0) {
-                resultsArea.innerHTML = '<p class="no-results">No results found.</p>';
-            } else {
-                // Crear un elemento HTML por cada resultado
-                results.forEach(item => {
+            if (matches.length > 0) {
+                els.results.classList.remove('hidden');
+                matches.forEach(loc => {
                     const div = document.createElement('div');
-                    div.className = 'result-item';
-                    
-                    // Contenido en Inglés
+                    div.className = "px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors";
                     div.innerHTML = `
-                        <h3>${item.name}</h3>
-                        <p>Role: ${item.role} | Location: ${item.location}</p>
+                        <div class="font-medium text-gray-800 text-sm">${loc.name}</div>
+                        <div class="text-xs text-gray-400">ID: ${loc.id}</div>
                     `;
                     
-                    // Acción al seleccionar una opción
-                    div.addEventListener('click', () => {
-                        alert(`You selected: ${item.name}`);
-                        // Aquí iría la lógica para llevar al usuario al perfil
-                    });
-
-                    resultsArea.appendChild(div);
+                    div.onclick = () => {
+                        // Rellenar campos visibles y ocultos
+                        els.search.value = loc.name;
+                        els.hName.value = loc.name;
+                        els.hLocId.value = loc.id;        // ID IMPORTANTE
+                        els.hCompId.value = loc.companyId; // COMPANY ID IMPORTANTE
+                        
+                        els.feedback.innerHTML = `✓ Cuenta seleccionada: <span class="text-gray-900 font-bold">${loc.name}</span>`;
+                        els.results.classList.add('hidden');
+                    };
+                    els.results.appendChild(div);
                 });
+            } else {
+                els.results.classList.add('hidden');
             }
-        }
+        });
+
+        // Ocultar lista al hacer click fuera
+        document.addEventListener('click', (e) => {
+            if (!els.search.contains(e.target)) els.results.classList.add('hidden');
+        });
+
+        // 3. Agregar Persona Dinámicamente
+        els.addBtn.addEventListener('click', () => {
+            const row = document.createElement('div');
+            row.className = "person-entry grid grid-cols-1 md:grid-cols-3 gap-4 p-5 bg-gray-50 rounded-lg border border-gray-200 relative group animate-fade-in hover:border-blue-300 transition-colors";
+            row.innerHTML = `
+                <div class="space-y-1">
+                    <label class="text-xs text-gray-400">Nombre</label>
+                    <input type="text" name="first_name" required class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs text-gray-400">Apellido</label>
+                    <input type="text" name="last_name" required class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs text-gray-400">Email</label>
+                    <input type="email" name="email" required class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                <button type="button" class="remove-person absolute -right-2 -top-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-all hover:bg-red-600">
+                    &times;
+                </button>
+            `;
+            els.peopleBox.appendChild(row);
+
+            row.querySelector('.remove-person').onclick = () => row.remove();
+        });
+
+        // 4. Manejo del Submit
+        els.form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Validación básica
+            if (!els.hLocId.value) {
+                alert("⚠️ Por favor busca y selecciona una cuenta válida de la lista.");
+                return;
+            }
+
+            // UI Loading
+            els.submitBtn.disabled = true;
+            els.spinner.classList.remove('hidden');
+            els.status.classList.add('hidden');
+
+            // Construcción del objeto de personas
+            const personRows = document.querySelectorAll('.person-entry');
+            const contactsArray = Array.from(personRows).map(row => ({
+                first_name: row.querySelector('[name="first_name"]').value,
+                last_name: row.querySelector('[name="last_name"]').value,
+                email: row.querySelector('[name="email"]').value
+            }));
+
+            // Payload final
+            const payload = {
+                location_id: els.hLocId.value,
+                company_id: els.hCompId.value,
+                account_name: els.hName.value,
+                contacts: contactsArray
+            };
+
+            try {
+                const response = await fetch(POST_DATA_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    els.status.textContent = "✅ Información enviada exitosamente.";
+                    els.status.className = "mt-4 text-center text-sm font-bold text-green-600 block";
+                    
+                    // Resetear formulario
+                    els.form.reset();
+                    els.hName.value = ""; els.hLocId.value = ""; els.hCompId.value = "";
+                    els.feedback.innerHTML = "";
+                    
+                    // Dejar solo 1 fila de persona
+                    els.peopleBox.innerHTML = '';
+                    els.addBtn.click(); // Agrega una fila vacía
+                } else {
+                    throw new Error("Error en respuesta del servidor");
+                }
+            } catch (error) {
+                console.error(error);
+                els.status.textContent = "❌ Error al enviar. Verifica tu conexión.";
+                els.status.className = "mt-4 text-center text-sm font-bold text-red-600 block";
+            } finally {
+                els.submitBtn.disabled = false;
+                els.spinner.classList.add('hidden');
+            }
+        });
+
+        // Iniciar carga de datos
+        init();
     </script>
 </body>
 </html>
