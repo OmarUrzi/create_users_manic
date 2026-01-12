@@ -111,8 +111,8 @@
                 const data = await res.json();
                 console.log(data)
                 // Estructura según tu ejemplo: Array -> objeto -> body -> locations
-                if(data && data[0] && data[0].body && data[0].body.locations) {
-                    locationsDB = data[0].body.locations;
+                if(data.locations) {
+                    locationsDB = data.locations;
                 } else {
                     console.error("Estructura de JSON inesperada");
                 }
