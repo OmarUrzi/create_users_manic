@@ -1,1 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alta de usuarios</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      background-color: #f6f7fb;
+      color: #1f2937;
+    }
 
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 48px 16px;
+    }
+
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    p.subtitle {
+      margin: 0 0 32px;
+      color: #64748b;
+      font-size: 15px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #475569;
+    }
+
+    input,
+    select,
+    button {
+      font-family: inherit;
+    }
+
+    .field {
+      margin-bottom: 24px;
+    }
+
+    .search-wrapper {
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1px solid #cbd5f5;
+      font-size: 15px;
+      background: #f8fafc;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .search-input:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+      background: #ffffff;
+    }
+
+    .options {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      max-height: 240px;
+      overflow-y: auto;
+      display: none;
+      z-index: 10;
+    }
+
+    .options.visible {
+      display: block;
+    }
+
+    .option {
+      padding: 12px 16px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .option:hover {
+      background: #f1f5f9;
+    }
+
+    .selected-location {
+      margin-top: 12px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      font-size: 14px;
+      color: #334155;
+    }
+
+    .people {
+      display: grid;
+      gap: 16px;
+    }
+
+    .person-card {
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: #fdfdfd;
+      display: grid;
+      gap: 12px;
+    }
+
+    .person-row {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .person-row input {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #cbd5f5;
+      background: #f8fafc;
+      font-size: 14px;
+    }
+
+    .person-row input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+      background: #ffffff;
+      outline: none;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    button {
+      border: none;
+      padding: 12px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .add-btn {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+
+    .submit-btn {
+      background: #4f46e5;
+      color: #ffffff;
+    }
+
+    .status {
+      margin-top: 16px;
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .status.success {
+      color: #16a34a;
+    }
+
+    .status.error {
+      color: #dc2626;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 24px 12px;
+      }
+
+      .container {
+        padding: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Agregar personas a una cuenta</h1>
+    <p class="subtitle">Busca la cuenta, agrega personas y envía la información al webhook.</p>
+
+    <div class="field">
+      <label for="location-search">Cuenta</label>
+      <div class="search-wrapper">
+        <input
+          id="location-search"
+          class="search-input"
+          type="text"
+          placeholder="Buscar por nombre de cuenta..."
+          autocomplete="off"
+        />
+        <div id="options" class="options"></div>
+      </div>
+      <div id="selected-location" class="selected-location" hidden></div>
+    </div>
+
+    <div class="field">
+      <label>Personas</label>
+      <div id="people" class="people"></div>
+      <div class="actions">
+        <button type="button" class="add-btn" id="add-person">Agregar otra persona</button>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="submit-btn" id="submit">Enviar</button>
+    </div>
+
+    <div id="status" class="status"></div>
+  </div>
+
+  <script>
+    const WEBHOOK_LOCATIONS = "https://hook.us2.make.com/3dsfptf2s4bseiwaozr3bumfk5guw58z";
+    const WEBHOOK_SUBMIT = "https://hook.us2.make.com/6czd9m1i7uqqnbnizn8lkokrlcgrs9zl";
+
+    const searchInput = document.getElementById("location-search");
+    const optionsEl = document.getElementById("options");
+    const selectedLocationEl = document.getElementById("selected-location");
+    const peopleEl = document.getElementById("people");
+    const addPersonBtn = document.getElementById("add-person");
+    const submitBtn = document.getElementById("submit");
+    const statusEl = document.getElementById("status");
+
+    let locations = [];
+    let selectedLocation = null;
+
+    const setStatus = (message, type = "") => {
+      statusEl.textContent = message;
+      statusEl.className = `status ${type}`.trim();
+    };
+
+    const renderOptions = (filtered) => {
+      optionsEl.innerHTML = "";
+
+      if (!filtered.length) {
+        const empty = document.createElement("div");
+        empty.className = "option";
+        empty.textContent = "No hay resultados";
+        optionsEl.appendChild(empty);
+        return;
+      }
+
+      filtered.forEach((location) => {
+        const option = document.createElement("div");
+        option.className = "option";
+        option.textContent = location.name;
+        option.addEventListener("click", () => {
+          selectedLocation = location;
+          searchInput.value = location.name;
+          optionsEl.classList.remove("visible");
+          selectedLocationEl.hidden = false;
+          selectedLocationEl.innerHTML = `
+            <strong>Seleccionado:</strong> ${location.name}<br />
+            <span>${location.address || ""} ${location.city || ""} ${location.state || ""}</span>
+          `;
+        });
+        optionsEl.appendChild(option);
+      });
+    };
+
+    const filterLocations = () => {
+      const query = searchInput.value.toLowerCase().trim();
+      const filtered = locations.filter((location) =>
+        location.name.toLowerCase().includes(query)
+      );
+      renderOptions(filtered);
+      optionsEl.classList.add("visible");
+    };
+
+    const addPersonRow = (data = {}) => {
+      const card = document.createElement("div");
+      card.className = "person-card";
+      card.innerHTML = `
+        <div class="person-row">
+          <input type="text" placeholder="Nombre" data-field="first_name" value="${data.first_name || ""}" />
+          <input type="text" placeholder="Apellido" data-field="last_name" value="${data.last_name || ""}" />
+          <input type="email" placeholder="Email" data-field="email" value="${data.email || ""}" />
+        </div>
+      `;
+      peopleEl.appendChild(card);
+    };
+
+    const collectPeople = () => {
+      const people = [];
+      peopleEl.querySelectorAll(".person-card").forEach((card) => {
+        const person = { first_name: "", last_name: "", email: "" };
+        card.querySelectorAll("input").forEach((input) => {
+          person[input.dataset.field] = input.value.trim();
+        });
+        if (person.first_name || person.last_name || person.email) {
+          people.push(person);
+        }
+      });
+      return people;
+    };
+
+    const loadLocations = async () => {
+      setStatus("Cargando cuentas...");
+      try {
+        const response = await fetch(WEBHOOK_LOCATIONS, { method: "GET" });
+        const data = await response.json();
+        const body = Array.isArray(data) ? data[0]?.body : data.body;
+        locations = body?.locations || [];
+        setStatus(`${locations.length} cuentas disponibles.`);
+        renderOptions(locations);
+      } catch (error) {
+        setStatus("No se pudieron cargar las cuentas.", "error");
+      }
+    };
+
+    searchInput.addEventListener("focus", filterLocations);
+    searchInput.addEventListener("input", filterLocations);
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest(".search-wrapper")) {
+        optionsEl.classList.remove("visible");
+      }
+    });
+
+    addPersonBtn.addEventListener("click", () => {
+      addPersonRow();
+    });
+
+    submitBtn.addEventListener("click", async () => {
+      if (!selectedLocation) {
+        setStatus("Selecciona una cuenta antes de enviar.", "error");
+        return;
+      }
+
+      const people = collectPeople();
+      if (!people.length) {
+        setStatus("Agrega al menos una persona.", "error");
+        return;
+      }
+
+      const payload = {
+        location: {
+          id: selectedLocation.id,
+          name: selectedLocation.name,
+          address: selectedLocation.address,
+          city: selectedLocation.city,
+          state: selectedLocation.state,
+          email: selectedLocation.email,
+        },
+        people,
+      };
+
+      setStatus("Enviando información...");
+      submitBtn.disabled = true;
+
+      try {
+        const response = await fetch(WEBHOOK_SUBMIT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error("Error en el envío");
+        }
+
+        setStatus("Información enviada correctamente.", "success");
+      } catch (error) {
+        setStatus("No se pudo enviar la información.", "error");
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    addPersonRow();
+    loadLocations();
+  </script>
+</body>
+</html>
