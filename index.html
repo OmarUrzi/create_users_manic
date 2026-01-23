@@ -12,7 +12,7 @@
         .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Validation status styles */
+        /* Estilos de validación */
         .status-valid { color: #16a34a; background-color: #f0fdf4; border-color: #bbf7d0; }
         .status-invalid { color: #dc2626; background-color: #fef2f2; border-color: #fecaca; }
         
@@ -23,7 +23,7 @@
 
     <div class="max-w-3xl mx-auto bg-white shadow-xl rounded-2xl overflow-hidden border border-slate-200">
         
-        <!-- Header -->
+        <!-- Encabezado -->
         <div class="bg-slate-900 px-6 py-8 md:px-10">
             <h2 class="text-2xl font-extrabold text-white tracking-tight flex items-center gap-3">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -34,10 +34,10 @@
             <p class="text-slate-400 text-sm mt-2 font-medium">Validate your Location ID to assign new contacts.</p>
         </div>
         
-        <!-- Main Form -->
+        <!-- Formulario Principal -->
         <form id="mainForm" class="p-6 md:p-10 space-y-8">
             
-            <!-- Location ID Validation Section -->
+            <!-- Sección de Validación de ID de Ubicación -->
             <div class="relative">
                 <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3">Location ID</label>
                 <div class="flex gap-3">
@@ -56,7 +56,7 @@
 
             <div class="h-px bg-slate-100"></div>
 
-            <!-- Contacts Section -->
+            <!-- Sección de Contactos -->
             <div>
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest">Contacts to send</label>
@@ -69,7 +69,7 @@
                 </div>
 
                 <div id="peopleContainer" class="space-y-4">
-                    <!-- Default Row -->
+                    <!-- Fila por defecto -->
                     <div class="person-entry grid grid-cols-1 md:grid-cols-3 gap-4 p-5 bg-slate-50 rounded-xl border border-slate-200 relative group animate-fade-in hover:border-blue-400 transition-colors">
                         <div class="space-y-1.5">
                             <label class="text-[10px] font-bold text-slate-400 uppercase">First Name</label>
@@ -81,13 +81,13 @@
                         </div>
                         <div class="space-y-1.5">
                             <label class="text-[10px] font-bold text-slate-400 uppercase">Email</label>
-                            <input type="email" name="email" required class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                            <input type="email" name="email" required class="email-input w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Submit Button -->
+            <!-- Botón de Envío -->
             <div class="pt-6">
                 <button type="submit" id="submitBtn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg shadow-slate-200 transform transition active:scale-[0.98] flex justify-center items-center gap-3">
                     <span id="btnText">SEND INFORMATION</span>
@@ -97,7 +97,7 @@
         </form>
     </div>
 
-    <!-- Custom Alert Modal -->
+    <!-- Modal de Alerta Personalizado -->
     <div id="customAlert" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl text-center">
             <div id="alertIcon" class="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4"></div>
@@ -125,20 +125,43 @@
             submitBtn: document.getElementById('submitBtn'),
             btnText: document.getElementById('btnText'),
             spinner: document.getElementById('spinner'),
-            // Alert elements
             alertModal: document.getElementById('customAlert'),
             alertTitle: document.getElementById('alertTitle'),
             alertBody: document.getElementById('alertBody'),
             alertIcon: document.getElementById('alertIcon')
         };
 
-        /**
-         * Function to perform validation
-         */
+        // Función para validar duplicados en tiempo real
+        function checkDuplicateEmails(currentInput) {
+            const allEmailInputs = document.querySelectorAll('.email-input');
+            const currentVal = currentInput.value.trim().toLowerCase();
+            
+            if (!currentVal) return;
+
+            let duplicateCount = 0;
+            allEmailInputs.forEach(input => {
+                if (input.value.trim().toLowerCase() === currentVal) {
+                    duplicateCount++;
+                }
+            });
+
+            if (duplicateCount > 1) {
+                showAlert('warning', 'Duplicate Email', `The email "${currentVal}" has already been entered in another row. Please use a unique email.`);
+                currentInput.value = ''; // Opcional: limpiar el campo
+                currentInput.focus();
+            }
+        }
+
+        // Delegación de eventos para capturar el 'blur' en inputs de email (incluso nuevos)
+        els.peopleBox.addEventListener('focusout', (e) => {
+            if (e.target.classList.contains('email-input')) {
+                checkDuplicateEmails(e.target);
+            }
+        });
+
         async function performValidation(idValue) {
             if (!idValue) return;
 
-            // Loading state
             els.validateBtn.disabled = true;
             els.validateText.textContent = "Validating...";
             els.validateSpinner.classList.remove('hidden');
@@ -146,7 +169,6 @@
             isValidated = false;
 
             try {
-                // Sending ID to validation webhook
                 const res = await fetch(`${VALIDATE_URL}?locationId=${idValue}`);
                 
                 if (res.status === 200) {
@@ -167,7 +189,6 @@
             }
         }
 
-        // Check for Query Params on load
         window.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const locationIdFromUrl = urlParams.get('locationId');
@@ -178,7 +199,6 @@
             }
         });
 
-        // ID Validation Logic (Manual Trigger)
         els.validateBtn.addEventListener('click', () => {
             const idValue = els.idInput.value.trim();
             if (!idValue) {
@@ -194,7 +214,6 @@
             els.feedback.className = `mt-3 text-sm flex items-center gap-2 min-h-[1.5rem] p-3 rounded-lg border ${success ? 'status-valid' : 'status-invalid'}`;
         }
 
-        // Add Person Row
         els.addBtn.addEventListener('click', () => {
             const row = document.createElement('div');
             row.className = "person-entry grid grid-cols-1 md:grid-cols-3 gap-4 p-5 bg-slate-50 rounded-xl border border-slate-200 relative group animate-fade-in hover:border-blue-400 transition-colors";
@@ -209,7 +228,7 @@
                 </div>
                 <div class="space-y-1.5">
                     <label class="text-[10px] font-bold text-slate-400 uppercase">Email</label>
-                    <input type="email" name="email" required class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                    <input type="email" name="email" required class="email-input w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
                 </div>
                 <button type="button" class="remove-person absolute -right-3 -top-3 bg-white text-slate-400 border border-slate-200 rounded-full w-8 h-8 flex items-center justify-center shadow-lg transition-all hover:text-red-500 hover:border-red-100 hover:bg-red-50">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -219,7 +238,6 @@
             row.querySelector('.remove-person').onclick = () => row.remove();
         });
 
-        // Final Submit
         els.form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -228,17 +246,23 @@
                 return;
             }
 
-            // UI Loading
-            els.submitBtn.disabled = true;
-            els.btnText.textContent = "SENDING...";
-            els.spinner.classList.remove('hidden');
-
             const personRows = document.querySelectorAll('.person-entry');
             const contactsArray = Array.from(personRows).map(row => ({
                 first_name: row.querySelector('[name="first_name"]').value.trim(),
                 last_name: row.querySelector('[name="last_name"]').value.trim(),
-                email: row.querySelector('[name="email"]').value.trim()
+                email: row.querySelector('[name="email"]').value.trim().toLowerCase()
             }));
+
+            // Doble chequeo por seguridad antes de enviar
+            const emails = contactsArray.map(c => c.email);
+            if (new Set(emails).size !== emails.length) {
+                showAlert('warning', 'Duplicate Emails', 'Please ensure each contact has a unique email address.');
+                return;
+            }
+
+            els.submitBtn.disabled = true;
+            els.btnText.textContent = "SENDING...";
+            els.spinner.classList.remove('hidden');
 
             const payload = {
                 location_id: els.idInput.value.trim(),
@@ -255,8 +279,6 @@
 
                 if (response.ok) {
                     showAlert('success', 'Success!', 'Contacts have been successfully registered for this location.');
-                    
-                    // Reset form
                     els.form.reset();
                     els.feedback.classList.add('hidden');
                     isValidated = false;
@@ -275,7 +297,6 @@
             }
         });
 
-        // UI Helpers
         function showAlert(type, title, message) {
             els.alertTitle.textContent = title;
             els.alertBody.textContent = message;
@@ -296,14 +317,12 @@
             els.alertModal.style.display = 'none';
         }
 
-        // If input changes after validation, force re-validation
         els.idInput.addEventListener('input', () => {
             if (isValidated) {
                 isValidated = false;
                 els.feedback.classList.add('hidden');
             }
         });
-
     </script>
 </body>
 </html>
