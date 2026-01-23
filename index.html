@@ -21,7 +21,7 @@
 </head>
 <body class="bg-slate-50 min-h-screen py-6 md:py-12 px-4 font-sans text-slate-800">
 
-    <div class="max-w-3xl mx-auto bg-white shadow-xl rounded-2xl overflow-hidden border border-slate-200">
+    <div class="max-w-4xl mx-auto bg-white shadow-xl rounded-2xl overflow-hidden border border-slate-200">
         
         <!-- Encabezado -->
         <div class="bg-slate-900 px-6 py-8 md:px-10">
@@ -31,7 +31,7 @@
                 </svg>
                 Location ID Management
             </h2>
-            <p class="text-slate-400 text-sm mt-2 font-medium">Validate your Location ID to assign new contacts.</p>
+            <p class="text-slate-400 text-sm mt-2 font-medium">Validate your Location ID to manage and assign new contacts.</p>
         </div>
         
         <!-- Formulario Principal -->
@@ -59,7 +59,7 @@
             <!-- Sección de Contactos -->
             <div>
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest">Contacts to send</label>
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest">Contacts to register</label>
                     <button type="button" id="addPerson" class="w-full sm:w-auto text-xs bg-blue-600 text-white hover:bg-blue-700 font-bold py-2.5 px-5 rounded-lg transition-all flex items-center justify-center gap-2 shadow-sm shadow-blue-200">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                           <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
@@ -70,18 +70,25 @@
 
                 <div id="peopleContainer" class="space-y-4">
                     <!-- Fila por defecto -->
-                    <div class="person-entry grid grid-cols-1 md:grid-cols-3 gap-4 p-5 bg-slate-50 rounded-xl border border-slate-200 relative group animate-fade-in hover:border-blue-400 transition-colors">
-                        <div class="space-y-1.5">
+                    <div class="person-entry grid grid-cols-1 md:grid-cols-12 gap-4 p-5 bg-slate-50 rounded-xl border border-slate-200 relative group animate-fade-in hover:border-blue-400 transition-colors">
+                        <div class="md:col-span-3 space-y-1.5">
                             <label class="text-[10px] font-bold text-slate-400 uppercase">First Name</label>
-                            <input type="text" name="first_name" required class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                            <input type="text" name="first_name" required class="name-input w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
                         </div>
-                        <div class="space-y-1.5">
+                        <div class="md:col-span-3 space-y-1.5">
                             <label class="text-[10px] font-bold text-slate-400 uppercase">Last Name</label>
-                            <input type="text" name="last_name" required class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                            <input type="text" name="last_name" required class="name-input w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
                         </div>
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase">Email</label>
-                            <input type="email" name="email" required class="email-input w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                        <div class="md:col-span-6 space-y-1.5">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">Email Address</label>
+                            <div class="flex gap-2">
+                                <input type="email" name="email" required class="email-input flex-grow border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                                <button type="button" title="Auto-generate email" class="auto-gen-btn bg-white border border-slate-200 p-2.5 rounded-lg text-slate-400 hover:text-blue-600 hover:border-blue-200 transition-all flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -112,6 +119,7 @@
         const SUBMIT_URL = 'https://hook.us2.make.com/6czd9m1i7uqqnbnizn8lkokrlcgrs9zl';
 
         let isValidated = false;
+        let existingEmails = new Set(); // Guardará los emails que ya existen en la ubicación
         
         const els = {
             idInput: document.getElementById('locationIdInput'),
@@ -131,13 +139,30 @@
             alertIcon: document.getElementById('alertIcon')
         };
 
-        // Función para validar duplicados en tiempo real
+        // Función para generar un email aleatorio
+        function generateRandomEmail(firstName, lastName) {
+            const clean = (str) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const fName = clean(firstName || 'user');
+            const lName = clean(lastName || '');
+            const randomNum = Math.floor(100 + Math.random() * 900);
+            return `${fName}${lName}${randomNum}@gmail.com`;
+        }
+
+        // Función para validar duplicados (contra la form y contra la base de datos existente)
         function checkDuplicateEmails(currentInput) {
-            const allEmailInputs = document.querySelectorAll('.email-input');
             const currentVal = currentInput.value.trim().toLowerCase();
-            
             if (!currentVal) return;
 
+            // 1. Verificar contra emails ya existentes en la ubicación (obtenidos en validación)
+            if (existingEmails.has(currentVal)) {
+                showAlert('warning', 'Already Exists', `The email "${currentVal}" is already registered as a user in this location database.`);
+                currentInput.value = '';
+                currentInput.focus();
+                return;
+            }
+
+            // 2. Verificar contra otros inputs en el formulario actual
+            const allEmailInputs = document.querySelectorAll('.email-input');
             let duplicateCount = 0;
             allEmailInputs.forEach(input => {
                 if (input.value.trim().toLowerCase() === currentVal) {
@@ -146,16 +171,36 @@
             });
 
             if (duplicateCount > 1) {
-                showAlert('warning', 'Duplicate Email', `The email "${currentVal}" has already been entered in another row. Please use a unique email.`);
-                currentInput.value = ''; // Opcional: limpiar el campo
+                showAlert('warning', 'Duplicate Entry', `The email "${currentVal}" has already been entered in another row. Please use a unique email.`);
+                currentInput.value = '';
                 currentInput.focus();
             }
         }
 
-        // Delegación de eventos para capturar el 'blur' en inputs de email (incluso nuevos)
+        // Manejo de eventos delegados para Email Blur y Botón de Auto-generación
         els.peopleBox.addEventListener('focusout', (e) => {
             if (e.target.classList.contains('email-input')) {
                 checkDuplicateEmails(e.target);
+            }
+        });
+
+        els.peopleBox.addEventListener('click', (e) => {
+            const genBtn = e.target.closest('.auto-gen-btn');
+            if (genBtn) {
+                const row = genBtn.closest('.person-entry');
+                const firstName = row.querySelector('[name="first_name"]').value;
+                const lastName = row.querySelector('[name="last_name"]').value;
+                const emailInput = row.querySelector('[name="email"]');
+                
+                let newEmail = generateRandomEmail(firstName, lastName);
+                
+                // Asegurarse que el generado no exista ya (en form o db)
+                while (existingEmails.has(newEmail)) {
+                    newEmail = generateRandomEmail(firstName, lastName);
+                }
+                
+                emailInput.value = newEmail;
+                checkDuplicateEmails(emailInput);
             }
         });
 
@@ -167,12 +212,22 @@
             els.validateSpinner.classList.remove('hidden');
             els.feedback.classList.add('hidden');
             isValidated = false;
+            existingEmails.clear();
 
             try {
                 const res = await fetch(`${VALIDATE_URL}?locationId=${idValue}`);
                 
-                if (res.status === 200) {
-                    showValidationResult(true, "✓ Valid Location ID");
+                if (res.ok) {
+                    const data = await res.json();
+                    
+                    // Guardar emails existentes
+                    if (data.users && Array.isArray(data.users)) {
+                        data.users.forEach(u => {
+                            if (u.email) existingEmails.add(u.email.toLowerCase());
+                        });
+                    }
+
+                    showValidationResult(true, `✓ Valid Location ID (${existingEmails.size} existing users detected)`);
                     isValidated = true;
                 } else {
                     const errorData = await res.json().catch(() => ({}));
@@ -192,7 +247,6 @@
         window.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const locationIdFromUrl = urlParams.get('locationId');
-            
             if (locationIdFromUrl) {
                 els.idInput.value = locationIdFromUrl;
                 performValidation(locationIdFromUrl);
@@ -216,19 +270,26 @@
 
         els.addBtn.addEventListener('click', () => {
             const row = document.createElement('div');
-            row.className = "person-entry grid grid-cols-1 md:grid-cols-3 gap-4 p-5 bg-slate-50 rounded-xl border border-slate-200 relative group animate-fade-in hover:border-blue-400 transition-colors";
+            row.className = "person-entry grid grid-cols-1 md:grid-cols-12 gap-4 p-5 bg-slate-50 rounded-xl border border-slate-200 relative group animate-fade-in hover:border-blue-400 transition-colors";
             row.innerHTML = `
-                <div class="space-y-1.5">
+                <div class="md:col-span-3 space-y-1.5">
                     <label class="text-[10px] font-bold text-slate-400 uppercase">First Name</label>
-                    <input type="text" name="first_name" required class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                    <input type="text" name="first_name" required class="name-input w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
                 </div>
-                <div class="space-y-1.5">
+                <div class="md:col-span-3 space-y-1.5">
                     <label class="text-[10px] font-bold text-slate-400 uppercase">Last Name</label>
-                    <input type="text" name="last_name" required class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                    <input type="text" name="last_name" required class="name-input w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
                 </div>
-                <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-slate-400 uppercase">Email</label>
-                    <input type="email" name="email" required class="email-input w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                <div class="md:col-span-6 space-y-1.5">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase">Email Address</label>
+                    <div class="flex gap-2">
+                        <input type="email" name="email" required class="email-input flex-grow border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                        <button type="button" title="Auto-generate email" class="auto-gen-btn bg-white border border-slate-200 p-2.5 rounded-lg text-slate-400 hover:text-blue-600 hover:border-blue-200 transition-all flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <button type="button" class="remove-person absolute -right-3 -top-3 bg-white text-slate-400 border border-slate-200 rounded-full w-8 h-8 flex items-center justify-center shadow-lg transition-all hover:text-red-500 hover:border-red-100 hover:bg-red-50">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -253,10 +314,13 @@
                 email: row.querySelector('[name="email"]').value.trim().toLowerCase()
             }));
 
-            // Doble chequeo por seguridad antes de enviar
+            // Validación final de emails únicos
             const emails = contactsArray.map(c => c.email);
-            if (new Set(emails).size !== emails.length) {
-                showAlert('warning', 'Duplicate Emails', 'Please ensure each contact has a unique email address.');
+            const duplicatesInForm = emails.filter((email, index) => emails.indexOf(email) !== index);
+            const alreadyExistsInDb = emails.filter(email => existingEmails.has(email));
+
+            if (duplicatesInForm.length > 0 || alreadyExistsInDb.length > 0) {
+                showAlert('warning', 'Duplicate Emails', 'Some emails are duplicated in the form or already exist in the database. Please check and correct them.');
                 return;
             }
 
@@ -282,6 +346,7 @@
                     els.form.reset();
                     els.feedback.classList.add('hidden');
                     isValidated = false;
+                    existingEmails.clear();
                     els.peopleBox.innerHTML = '';
                     els.addBtn.click();
                 } else {
@@ -321,6 +386,7 @@
             if (isValidated) {
                 isValidated = false;
                 els.feedback.classList.add('hidden');
+                existingEmails.clear();
             }
         });
     </script>
